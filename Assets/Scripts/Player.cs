@@ -14,8 +14,13 @@ public class Player
 
     public event Action CommandChanged;
 
+    public int HP { get; private set; }
+
+    public bool IsDead { get { return HP <= 0; } }
+
     public Player(string name, IntVector2 position, Stage stage)
     {
+        this.HP = 4;
         this.Name = name;
         this.Position = position;
 
@@ -32,7 +37,7 @@ public class Player
 
     public void OnCommandSelected(CommandType type)
     {
-        Command = CommandFactory.CreateCommand(type, this);
+        Command = CommandFactory.CreateCommand(type, stage, this);
 
         if (CommandChanged != null)
             CommandChanged();
@@ -64,6 +69,11 @@ public class Player
     public void Defense()
     {
         // TODO
+    }
+
+    public void Hit(int damage)
+    {
+        HP -= damage;
     }
 
     #endregion Action

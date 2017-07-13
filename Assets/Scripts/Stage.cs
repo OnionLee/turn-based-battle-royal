@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 public class Stage : MonoBehaviour
@@ -28,7 +29,6 @@ public class Stage : MonoBehaviour
     private Player player;
     private Player enemy;
 
-    private bool isGameOver;
     private int turnCount;
 
     [SerializeField]
@@ -40,6 +40,22 @@ public class Stage : MonoBehaviour
         {
             yield return player;
             yield return enemy;
+        }
+    }
+
+    public IEnumerable<Player> AlivePlayers
+    {
+        get
+        {
+            return Players.Where(p => p.IsDead == false);
+        }
+    }
+
+    public bool IsGameOver
+    {
+        get
+        {
+            return AlivePlayers.Count() == 1;
         }
     }
 
@@ -81,11 +97,11 @@ public class Stage : MonoBehaviour
 
     private IEnumerator UpdateTurn()
     {
-        while (isGameOver == false)
+        while (IsGameOver == false)
         {
             turnCount++;
 
-            foreach (var player in Players)
+            foreach (var player in AlivePlayers)
             {
                 CurrentPlayer = player;
 
@@ -96,16 +112,45 @@ public class Stage : MonoBehaviour
 
             yield return null;
 
-            DoCommand(Players.Select(p => p.Command));
+            DoCommand(AlivePlayers.Select(p => p.Command));
+
+            yield return new WaitForSeconds(2.0f);
         }
+
+        hud.ShowMsg(CurrentPlayer.Name + "승리!");
     }
 
     private void DoCommand(IEnumerable<Command> commands)
     {
-        foreach (var command in commands)
+        var sb = new StringBuilder();
+
+        var defensees = commands.Where(c => c is DefenseCommand).Cast<DefenseCommand>();
+
+        foreach (var defense in defensees)
         {
-            command.Do();
+            sb = sb.Append(defense.Do());
+            sb = sb.Append("\n");
         }
+
+        //이동의 경우는 섞는다.
+        var moves = commands.Where(c => c is MoveCommand).Cast<MoveCommand>().ToList();
+        moves.Shuffle();
+
+        foreach (var move in moves)
+        {
+            sb = sb.Append(move.Do());
+            sb = sb.Append("\n");
+        }
+
+        var attacks = commands.Where(c => c is AttackCommand).Cast<AttackCommand>().ToList();
+
+        foreach (var attack in attacks)
+        {
+            sb = sb.Append(attack.Do());
+            sb = sb.Append("\n");
+        }
+
+        hud.ShowMsg(sb.ToString());
     }
 
     private void CreateTiles()
@@ -159,15 +204,20 @@ public class Stage : MonoBehaviour
         hud.OnStartTurn();
     }
 
+    public Player FindEnemy(IntVector2 target)
+    {
+        return AlivePlayers.FirstOrDefault(p => p.Position == target);
+    }
+
     private void OnTileClicked(Tile tile)
     {
         if (CurrentPlayer.Command == null)
         {
-            hud.OnInvaildTileClicked("커맨드를 선택해주세요.");
+            hud.ShowMsg("커맨드를 선택해주세요.");
         }
         else if (CurrentPlayer.Command.TrySetTarget(tile) == false)
         {
-            hud.OnInvaildTileClicked(CurrentPlayer.Command.GetInValidClickMsg());
+            hud.ShowMsg(CurrentPlayer.Command.GetInValidClickMsg());
         }
         else
         {

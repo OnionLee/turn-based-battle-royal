@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +8,12 @@ public class HUD : MonoBehaviour
     private Button moveButton;
 
     [SerializeField]
+    private Button attackButton;
+
+    [SerializeField]
+    private Button defenseButton;
+
+    [SerializeField]
     private Text notiText;
 
     private Stage stage;
@@ -16,6 +21,8 @@ public class HUD : MonoBehaviour
     private void Awake()
     {
         moveButton.onClick.AddListener(OnMoveButtonClicked);
+        defenseButton.onClick.AddListener(OnDefenseButtonClicked);
+        attackButton.onClick.AddListener(OnAttackButtonClicked);
 
         stage = FindObjectOfType<Stage>();
     }
@@ -32,7 +39,17 @@ public class HUD : MonoBehaviour
 
     public void OnMoveButtonClicked()
     {
-        stage.CurrentPlayer.OnCommandSelected(CommandType.Moving);
+        stage.CurrentPlayer.OnCommandSelected(CommandType.Move);
+    }
+
+    public void OnAttackButtonClicked()
+    {
+        stage.CurrentPlayer.OnCommandSelected(CommandType.Attack);
+    }
+
+    public void OnDefenseButtonClicked()
+    {
+        stage.CurrentPlayer.OnCommandSelected(CommandType.Defense);
     }
 
     public void OnStartTurn()
@@ -40,7 +57,7 @@ public class HUD : MonoBehaviour
         ResetNoti();
     }
 
-    public void OnInvaildTileClicked(string msg)
+    public void ShowMsg(string msg)
     {
         StartCoroutine(PrintMsg(msg));
     }
